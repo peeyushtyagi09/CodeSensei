@@ -1,10 +1,18 @@
 const express = require("express");
-const router = require("express").Router();
-const Users = require("../models/Users");
+const router = express.Router();
+const authController = require('../controllers/authController');
+const { protect } = require('../middlewares/authMiddleware');
 
-router.post("/register", );
-router.post("/login", );
-router.post("/forget-password", ); 
-router.post('/logout', );
+// Public
+router.post('/register', authController.register);
+router.get('/verify-email', authController.verifyEmail);
+router.post('/login', authController.login);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
+router.post('/logout', authController.logout);
+
+// Protected
+router.get('/me', protect, authController.getMe);
+router.put('/update-password', protect, authController.updatePassword);
 
 module.exports = router;

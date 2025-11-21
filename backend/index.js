@@ -2,14 +2,33 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const cookieParser = require('cookie-parser');
+const morgan = require('morgan');
+
 
 const connectdb = require("./db/db");
+const errorHandler = require("./middlewares/errorHandler");
+const authRoutes = require("./routes/auth_routes");
 
 const app = express();
 
-app.use(express.json());
-app.use(cors());
+// Middlewares
 app.use(helmet());
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+if (process.env.NODE_ENV !== 'production') {
+    app.use(morgan('dev'));
+  }
+
+// CORS (IMPORTANT for cookies + frontend URL)
+app.use(
+    cors({
+      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      credentials: true,
+    })
+  );
 
 app.get("/", (req, res) => {
     res.send("Hello world!");
@@ -17,6 +36,13 @@ app.get("/", (req, res) => {
 
 // connectdb
 connectdb();
+
+// routes 
+app.use('/api/auth', authRoutes);
+
+/* -------------------- Error Middleware (LAST) -------------------- */
+app.use(errorHandler);
+
 
 const startServer = async () => {
     try {
