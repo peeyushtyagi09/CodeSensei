@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const User = require("../models/Users");
+const User = require("../models/User");
 const asyncHandler = require('../middlewares/asyncHandler');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
