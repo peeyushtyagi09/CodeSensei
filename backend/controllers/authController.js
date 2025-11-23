@@ -1,11 +1,11 @@
 const crypto = require("crypto");
-const User = require("../models/User");
+const User = require("../models/Users");
 const asyncHandler = require('../middlewares/asyncHandler');
 const generateToken = require('../utils/generateToken');
 const sendEmail = require('../utils/sendEmail');
 
 const sendTokenResponse = (user, statusCode, res) => {
-    const token = generateToken({ id: user._id });
+  const token = generateToken(user._id.toString()); 
     const cookieOptions = {
         httpOnly: true, 
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
@@ -46,8 +46,14 @@ exports.register = asyncHandler(async(req, res) => {
 
     // create verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
-    user.verificationToken = crypto.createHash('sha2560').update(verificationToken).digest('hex');
-    user.verificationTokenExpiry = Date.noe() + 1000 * 60 * 60 * 24;
+    const hashedToken = Buffer.from(
+      await crypto.subtle.digest(
+          "SHA-256",
+          Buffer.from(verificationToken)
+      )
+  ).toString("hex");
+    user.verificationToken = hashedToken;
+    user.verificationTokenExpiry = Date.now() + 1000 * 60 * 60 * 24;
     await user.save({ validateBeforeSave: false });
   // send verification email
   const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}&id=${user._id}`;
@@ -73,29 +79,37 @@ exports.register = asyncHandler(async(req, res) => {
   sendTokenResponse(user, 201, res);
 });
 
-exports.verifyEmail = asyncHandler( async (req, res) => {
-    const { token, id } = req.query;
-    if(!token || !id){
-      return res.status(400).json({ success: false, error: 'Invalid verfication link'});
-    }
+exports.verifyEmail = asyncHandler(async (req, res) => {
+  const { token, id } = req.query;
 
-    const hashed = crypto.createHash('sha256').update(token).digest('hex');
-    const user = await User.findOne({
-      _id: is, 
-      verificationToken: hashed,
-      verificationTokenExpiry: { $gt: Date.now() },
+  if (!token || !id) {
+    return res.status(400).json({ success: false, error: "Invalid verification link" });
+  }
+
+  const hashed = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    _id: id,  // FIXED HERE
+    verificationToken: hashed,
+    verificationTokenExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid or expired verification token",
     });
+  }
 
-    if(!user) {
-      return res.status(400).json({ success: false, error: 'Invalid or expired verification token'})
-    }
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpiry = undefined;
-    await user.save({ validateBeforeSave: false });
+  user.isVerified = true;
+  user.verificationToken = undefined;
+  user.verificationTokenExpiry = undefined;
 
-    res.json({ success: true, message: 'Email verification successfully'});
+  await user.save({ validateBeforeSave: false });
+
+  res.json({ success: true, message: "Email verified successfully" });
 });
+
 
 exports.login = asyncHandler(async (req, res) => {
     const { emailOrUsername, password } = req.body;
