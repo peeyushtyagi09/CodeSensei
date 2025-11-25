@@ -32,53 +32,52 @@ const UserSchemma = new mongoose.Schema({
         type: Boolean, 
         default: false,
     }, 
+    persona: {
+        type: String,
+        enum: ["elon", "sundar", "friendly", "strict", "default"],
+        default: "default",
+    },
+    
+    experienceLevel: {
+        type: String,
+        enum: ["beginner", "intermediate", "advanced"],
+        default: "beginner",
+    },
+    
+    preferredRoles: {
+        type: [String],
+        default: [],
+    },
+    
+    weakTopics: {
+        type: [String],
+        default: [],
+    },
+    
+    strongTopics: {
+        type: [String],
+        default: [],
+    },
+    
+    interviewGoal: {
+        type: String,
+        default: "",
+    },
+    
+    bio: {
+        type: String,
+        maxLength: 300,
+    },
+    
+    avatar: {
+        type: String,
+        default: "",
+    },
     verificationToken: String, 
     verificationTokenExpiry: Date, 
     resetPasswordToken:String, 
     resetPasswordExpires: Date, 
 },
-persona: {
-    type: String,
-    enum: ["elon", "sundar", "friendly", "strict", "default"],
-    default: "default",
-},
-
-experienceLevel: {
-    type: String,
-    enum: ["beginner", "intermediate", "advanced"],
-    default: "beginner",
-},
-
-preferredRoles: {
-    type: [String],
-    default: [],
-},
-
-weakTopics: {
-    type: [String],
-    default: [],
-},
-
-strongTopics: {
-    type: [String],
-    default: [],
-},
-
-interviewGoal: {
-    type: String,
-    default: "",
-},
-
-bio: {
-    type: String,
-    maxLength: 300,
-},
-
-avatar: {
-    type: String,
-    default: "",
-},
-
 {
     timestamp: true, 
     toJSON: {virtuals: true },
