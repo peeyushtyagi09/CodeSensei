@@ -23,23 +23,23 @@ const generateQuestionSaveAIuestion = async (topic, difficulty, count) => {
         count,
     };
 
-    const aiResults = await aiClient.generateQuestion(aiResponse);
+    const aiResults = await aiClient.generateQuestions(aiRequests);
     if(!Array.isArray(aiResults) || aiResults.length === 0) return [];
 
     const toInsert = [];
-    for(const row of aiResults){
+    for(const raw of aiResults){
         const q = {
-            title: (raw.totle || "").trim(),
+            title: (raw.title || "").trim(),
             description: (raw.description || "").trim(),
             examples: Array.isArray(raw.examples) ? raw.examples : [],
             constraints: raw.constraints || "",
             topic: (raw.topic || topic).toLowerCase(),
             difficulty: (raw.difficulty || difficulty).toLowerCase(),
             starterCode: raw.starterCode || "",
-            testCase: Array.isArray(raw.testCases) ? raw.testCases: [],
-            soruce: "ai",
+            testCases: Array.isArray(raw.testCases) ? raw.testCases: [],
+            source: "ai",
             createdBy: null, 
-            isactive: true,
+            isActive: true,
         };
         if(!validateQuestionPayload(q)) {
             continue;
@@ -90,7 +90,10 @@ exports.getRandomQuestions = asyncHandler(async(req, res) => {
     const difficulty = req.query.difficulty ? String(req.query.difficulty).toLowerCase() : null;
 
     // BuildMatch
-    const match = { isActive: true };
+    const match = { 
+        isActive: true,
+        nextAvailableAt: {$lte: new Date() }
+     };
     if(topic) match.topic = topic;
     if(difficulty) match.difficulty = difficulty;
 
@@ -105,7 +108,7 @@ exports.getRandomQuestions = asyncHandler(async(req, res) => {
         const generated = await generateQuestionSaveAIuestion(topic || "other", difficulty || "medium", missing);
 
         if(generated && generated.length > 0){
-            const genObjs = generate.map((d) => (d.toObject ? s.toObject() : d));
+            const genObjs = generated.map((d) => (d.toObject ? d.toObject() : d));
             questions = questions.concat(genObjs);
         }
     }
@@ -144,7 +147,7 @@ exports.getQuestionsByTopic = asyncHandler(async (req, res) => {
   
 
 exports.getQuestionBydifficulty = asyncHandler(async(req, res) => {
-    const level = String(req,params.level || "").toLowerCase();
+    const level = req.params.level.toLowerCase(); 
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
     const skip = (page - 1) * limit;

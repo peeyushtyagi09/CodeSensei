@@ -7,7 +7,7 @@ const exampleSchema = new mongoose.Schema({
 }, { _id: false });
 
 const testCaseSchema = new mongoose.Schema({
-    imput: {type: String, required: true},
+    input: {type: String, required: true},
     output: {type: String, requiredd: true},
     hidden: {type: Boolean, default: false},
 }, {_id: false});
@@ -80,6 +80,14 @@ const QuestionSchema = new mongoose.Schema({
         submissions: {type: Number, default: 0},
         accepted: {type: Number, default: 0},
     },
+    nextAvailableAt: {
+        type: Date,
+        default: Date.now(),
+    },
+    cooldownMouths: {
+        type: Number, 
+        default: 6,
+    }
 }, {timestamps: true});
 
 QuestionSchema.virtual('accuracy').get(function () {

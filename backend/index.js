@@ -9,6 +9,7 @@ const morgan = require('morgan');
 const connectdb = require("./db/db");
 const errorHandler = require("./middlewares/errorMiddleware");
 const authRoutes = require("./routes/Users_routes");
+const questionRoutes = require("./routes/questionRoutes");
 
 const app = express();
 
@@ -39,7 +40,18 @@ connectdb();
 
 // routes 
 app.use('/api/auth', authRoutes);
+app.use("/api/questions", questionRoutes);
 
+// app.get("/test-ai", async (req, res) => {
+//     const ai = require("./utils/aiClient");
+//     const r = await ai.generateQuestions({
+//       topic: "tree",
+//       difficulty: "hard",
+//       count: 1
+//     });
+//     res.json(r);
+//   });
+  
 /* -------------------- Error Middleware (LAST) -------------------- */
 app.use(errorHandler);
 

@@ -16,6 +16,7 @@ exports.updateProfile = asyncHandler(async (req, res) => {
         "persona",
         "experienceLevel",
         "interviewGoal",
+        "role",
         "bio",
     ];
 
