@@ -38,7 +38,7 @@ ONLY valid JSON.
       {
         model: "openai/gpt-oss-20b",
         messages: [{ role: "user", content: prompt }],
-        temperature: 1.5,
+        temperature: 1.5--,
         response_format: { type: "json_object" } // JSON mode
       },
       {
