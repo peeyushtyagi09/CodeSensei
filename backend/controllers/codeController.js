@@ -31,7 +31,11 @@ exports.runCode = asyncHandler(async (req, res) => {
         const stdout = normalizeOutput(run.stdout || '');
         const stderr = normalizeOutput(run.stderr || '');
         const exitCode = run.code ?? run.exitCode ?? null;
-        const timeout = run.single === 'SIGKILL' || run.signal === 'SIGTERM' || run.output?.includes('Timeout');
+        const timedOut =
+            run.signal === 'SIGKILL' ||
+            run.signal === 'SIGTERM' ||
+            run.output?.includes('Timeout');
+
 
         return res.json({
             success: true,
@@ -74,7 +78,7 @@ exports.submitCode = asyncHandler(async (req, res) => {
     for(const tc of runCases) {
         const stdin = tc.input ?? '';
         try {
-            const execResp = await runWithPistion({ language, version, files, stdin, timeout });
+            const execResp = await runWithPiston({ language, version, files, stdin, timeout });
 
             const run = execResp.run || execResp;
             const rawStdout = run.stdout ?? '';
@@ -86,8 +90,8 @@ exports.submitCode = asyncHandler(async (req, res) => {
 
             if(!passed) allPassed = false;
 
-            result.push({
-                input: ic.input,
+            results.push({
+                input: tc.input,
                 expected,
                 stdout, 
                 stderr: normalizeOutput(rawStderr),

@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { promisify } = require("util");
 
-const DEFAULT_TIMEOUT= praseInt(process.env.RUN_TIMEOUT_MS || '5000', 10);
+const DEFAULT_TIMEOUT = parseInt(process.env.RUN_TIMEOUT_MS || '5000', 10);
 
 function normalizeOutput(output){
     if(typeof output !== 'string') return String(output);

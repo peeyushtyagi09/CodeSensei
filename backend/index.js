@@ -10,6 +10,7 @@ const connectdb = require("./db/db");
 const errorHandler = require("./middlewares/errorMiddleware");
 const authRoutes = require("./routes/Users_routes");
 const questionRoutes = require("./routes/questionRoutes");
+const codeRoutes = require('./routes/codeRoutes');
 
 const app = express();
 
@@ -41,6 +42,7 @@ connectdb();
 // routes 
 app.use('/api/auth', authRoutes);
 app.use("/api/questions", questionRoutes);
+app.use('/api/code', codeRoutes);
 
 // app.get("/test-ai", async (req, res) => {
 //     const ai = require("./utils/aiClient");
