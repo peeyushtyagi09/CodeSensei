@@ -1,16 +1,17 @@
 const mongoose = require("mongoose");
 
 const exampleSchema = new mongoose.Schema({
-    input: {type: String, required: true},
-    output: {type: String, required: true},
-    explanation: {type: String},
+    input: { type: mongoose.Schema.Types.Mixed, required: true },
+    output: { type: mongoose.Schema.Types.Mixed, required: true },
+    explanation: { type: String },
 }, { _id: false });
 
 const testCaseSchema = new mongoose.Schema({
-    input: {type: String, required: true},
-    output: {type: String, requiredd: true},
-    hidden: {type: Boolean, default: false},
-}, {_id: false});
+    input: { type: mongoose.Schema.Types.Mixed, required: true },
+    output: { type: mongoose.Schema.Types.Mixed, required: true },
+    hidden: { type: Boolean, default: false },
+}, { _id: false });
+
 
 const QuestionSchema = new mongoose.Schema({
     title: {
@@ -41,7 +42,7 @@ const QuestionSchema = new mongoose.Schema({
     },
     topic: {
         type: String, 
-        enum: ["array", "string", "graph", "dp", "tree", "recursion", "math", "other"],
+        enum: ["array", "string", "graph", 'greedy', "dp", "tree", "recursion", "math", "other"],
         required: true, 
         lowercase: true, 
         trim: true,

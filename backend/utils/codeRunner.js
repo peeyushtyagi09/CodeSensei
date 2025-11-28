@@ -14,8 +14,8 @@ async function runWithPiston({ language, version = '*', files, stdin = '', timeo
         language, 
         version,
         files,
-        stdin,
-        run_timeout: Math.ceil(timeout / 10000),
+        stdin: `${stdin}\n`,
+        run_timeout: Math.ceil(timeout / 1000),
     }
 
     const resp = await axios.post(pistonUrl, payload, { timeout: timeout + 2000 });

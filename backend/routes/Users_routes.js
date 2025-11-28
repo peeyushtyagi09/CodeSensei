@@ -23,7 +23,7 @@ router.put('/update-password', protect, authController.updatePassword);
 
 // Profile
 router.get("/profile", protect, getProfile);
-router.put("/update", protect, updateProfile);
+router.put("/update-profile", protect, updateProfile);
 router.put("/update-preferences", protect, updatePreferences);
 router.put("/update-avatar", protect, updateAvatar);
 
