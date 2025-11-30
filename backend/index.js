@@ -11,6 +11,7 @@ const errorHandler = require("./middlewares/errorMiddleware");
 const authRoutes = require("./routes/Users_routes");
 const questionRoutes = require("./routes/questionRoutes");
 const codeRoutes = require('./routes/codeRoutes');
+const testCases = require("./routes/testcaseRoutes");
 
 const app = express();
 
@@ -43,6 +44,7 @@ connectdb();
 app.use('/api/auth', authRoutes);
 app.use("/api/questions", questionRoutes);
 app.use('/api/code', codeRoutes);
+app.use('/api/testcases', testCases);
 
 // app.get("/test-ai", async (req, res) => {
 //     const ai = require("./utils/aiClient");

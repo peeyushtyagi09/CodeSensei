@@ -9,6 +9,10 @@ const {
     getQuestionById,
 } = require('../controllers/questionController')
 
+const { createAIQuestion } = require('../controllers/aiQuestionController');
+
+router.post('/ai-create', protect, createAIQuestion); 
+
 router.post('/create', protect, createQuestion);
 
 router.get("/random", getRandomQuestions);
