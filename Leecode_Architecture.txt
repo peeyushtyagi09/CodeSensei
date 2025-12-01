@@ -1,0 +1,369 @@
+Below is **clear theory only**, explaining:
+
+1. **How LeetCode actually runs and evaluates code internally**
+2. **How your current system works** (based on your files)
+3. **What you must change to reach a “LeetCode-style” architecture**
+4. **What extra backend components you will need**
+
+No code is included because you asked for **theory only**.
+
+---
+
+# 1. How LeetCode Actually Runs Code (Internal Working)
+
+Think of LeetCode’s workflow in **four layers**:
+
+---
+
+## **Layer 1 — Sandbox / Executor Layer**
+
+This is NOT Node.js.
+It is a **low-level isolated runner** built using:
+
+* Docker sandbox
+* cgroup memory limits
+* CPU time limits
+* Seccomp / chroot
+* Firecracker micro-VM (for heavy languages)
+
+This layer ensures:
+
+* Each run is isolated
+* Memory limit exceeded → immediate kill
+* Time limit exceeded → kill
+* Infinite loop → kill
+* Cannot access network, disk, OS
+* Only STDIN/STDOUT allowed
+
+Every code execution happens inside a container like:
+
+```
+gcc user.cpp … && ./a.out < input.txt
+```
+
+This is why LeetCode never trusts Node.js to run arbitrary code.
+
+---
+
+## **Layer 2 — Judge Orchestration Service**
+
+This service receives:
+
+* Code
+* Language
+* List of testcases (inputs + expected outputs)
+* Time/memory limits
+
+This service is responsible for:
+
+1. **Queueing execution**
+2. **Sending code to multiple executor instances**
+3. **Collecting output**
+4. **Comparing output with expected**
+5. **Determining AC / WA / TLE / MLE / RE**
+6. **Returning structured result:**
+
+   * stdout
+   * stderr
+   * exit code
+   * time used
+   * memory used
+
+This is LeetCode’s “Judge”.
+
+---
+
+## **Layer 3 — Testcase Engine**
+
+LeetCode stores:
+
+* Visible testcases
+* Hidden testcases
+* Large stress testcases
+* Edge cases
+* Random generator-based testcases
+
+They run **only a few visible testcases** when you press **Run**,
+and **all** testcases when you press **Submit**.
+
+---
+
+## **Layer 4 — API Layer**
+
+Frontend calls:
+
+```
+POST /run
+POST /submit
+```
+
+LeetCode returns:
+
+* Status: Accepted, Wrong Answer, TLE, MLE, Runtime Error
+* For each testcase:
+
+  * input
+  * expected
+  * actual
+  * output diff
+
+---
+
+# 2. How Your Current System Works (Based on Your Files)
+
+Your system is:
+
+### **A. Single Node.js API calling Piston**
+
+From **codeController.js** :
+
+* `/run` → sends code + stdin → Piston → returns raw output
+* `/submit` → iterates testcases → runs each via Piston → compares output
+
+### **B. No container-level isolation**
+
+Piston provides basic isolation but **not advanced constraints** like LeetCode.
+
+### **C. No TLE/MLE detection**
+
+You only detect timeout by SIGKILL, but:
+
+* No **memory limit** detection
+* No **time consumed** measurement
+* No **CPU throttling**
+
+### **D. Node.js does the judging work**
+
+This is the main difference.
+In LeetCode:
+
+* Judge server runs independently
+* API never touches execution logic
+* Execution servers are separate machines
+
+### **E. Your testcases are stored in MongoDB**
+
+From Question.js .
+
+### **F. You do synchronous loop execution**
+
+In submit, you loop testcase-by-testcase inside Node.js.
+This will become slow for big problems.
+
+---
+
+# 3. What You Must Change to Become “LeetCode-Style”
+
+Below is the minimal architecture you need.
+
+---
+
+# **A. Split into 3 services**
+
+## **1. API Service (Node.js)**
+
+Purpose:
+
+* Receives `/run` and `/submit` requests
+* Sends job to queue
+* Returns job ID
+* Does NOT execute code itself
+
+Your current `codeController.js` changes from “execute code” → “create job”.
+
+---
+
+## **2. Judge Worker (Python/Go/Node)**
+
+This service:
+
+* Pulls jobs from queue (Redis / RabbitMQ)
+* Runs code inside Docker sandbox
+* Collects result
+* Stores reports in database
+* Marks job as completed
+
+This is the true “judge”.
+
+---
+
+## **3. Execution Sandbox (Docker)**
+
+Each run must happen inside:
+
+* Separate container
+* CPU limit
+* Memory limit
+* Timeout
+* No filesystem access
+* No network
+
+Example container:
+
+```
+docker run --rm --memory=256m --cpus=1 --network=none judge_cpp:latest
+```
+
+This gives you:
+
+* Accurate TLE
+* Accurate MLE
+* Security
+* Consistency
+
+---
+
+# **B. Add Job Queue**
+
+Use:
+
+* Redis Queue (BullMQ)
+  or
+* RabbitMQ
+  or
+* Kafka
+
+Flow:
+
+```
+POST /submit
+↓
+API Service creates job { code, language, testcaseIds }
+↓
+Redis Queue
+↓
+Judge Worker picks job
+↓
+Runs each testcase inside isolated container
+↓
+Stores result
+↓
+API returns final actions to frontend
+```
+
+---
+
+# **C. Add Real TLE/MLE Detection**
+
+Inside sandbox, you measure:
+
+* Peak memory → if > limit: MLE
+* CPU runtime → if > limit: TLE
+
+---
+
+# **D. Add Fast Execution for Single TEST (Run Code Button)**
+
+LeetCode uses a different server to handle “Run” fast.
+
+Your version should:
+
+* Run visible testcases only
+* Skip heavy testcases
+* Return instant output
+
+---
+
+# **E. Add Output Comparator**
+
+Your current compare is:
+
+```
+stdout === expected
+```
+
+This fails for:
+
+* Extra spaces
+* Trailing newline
+* Float precision
+* Arrays
+* JSON
+* Custom formats
+
+You must implement:
+
+```
+Smart Comparator Engine
+```
+
+---
+
+# 4. What Extra Files You Will Need
+
+To implement LeetCode-style:
+
+### **1. /judge-worker/**
+
+* judgeWorker.js or judgeWorker.py
+* pull jobs from queue
+* run docker process
+* parse output
+* return result
+
+### **2. /docker-images/**
+
+* cpp-runner/Dockerfile
+* python-runner/Dockerfile
+* java-runner/Dockerfile
+
+### **3. /queue/**
+
+* bullmq.js
+* redisConfig.js
+
+### **4. /services/**
+
+* executionService.js
+  Handles starting containers.
+
+### **5. /models/**
+
+* Submission.js
+  Stores results like LeetCode.
+
+### **6. In your current API**
+
+Modify codeController → only enqueue tasks, not run Piston.
+
+---
+
+# Summary (Short)
+
+Your current backend is:
+
+* Single server
+* Directly calling Piston
+* Node.js performs judging
+* Not isolated
+* Not scalable
+* No advanced limits (TLE/MLE)
+
+LeetCode architecture is:
+
+* Multi-service
+* Sandbox executor (Docker/MicroVM)
+* Judge worker doing comparison
+* API only sending/receiving jobs
+* Queue-based execution
+* Smart comparator + strict limits
+
+To match LeetCode performance and behavior, you must introduce:
+
+* Docker sandbox
+* Judge worker service
+* Queue system
+* Submission model
+* Memory/CPU/time limits
+* Smart output comparators
+* Separate fast-run endpoint
+
+---
+
+If you want, I can now generate:
+
+1. **Complete architecture diagram**
+2. **Folder structure for production**
+3. **Judge Worker full code (Node.js or Python)**
+4. **Dockerfiles for each language**
+5. **Updated API layer for enqueue/dequeue** 
