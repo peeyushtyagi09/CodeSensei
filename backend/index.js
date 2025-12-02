@@ -12,6 +12,8 @@ const authRoutes = require("./routes/Users_routes");
 const questionRoutes = require("./routes/questionRoutes");
 const codeRoutes = require('./routes/codeRoutes');
 const testCases = require("./routes/testcaseRoutes");
+const { runQueue, submitQueue } = require('./queue/queues'); // to ensure queues init
+const resultRoutes = require('./routes/resultRoutes');
 
 const app = express();
 
@@ -45,6 +47,8 @@ app.use('/api/auth', authRoutes);
 app.use("/api/questions", questionRoutes);
 app.use('/api/code', codeRoutes);
 app.use('/api/testcases', testCases);
+app.use('/api/code', codeRoutes);
+app.use('/api/results', resultRoutes);
 
 // app.get("/test-ai", async (req, res) => {
 //     const ai = require("./utils/aiClient");
