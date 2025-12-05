@@ -45,14 +45,19 @@ exports.register = asyncHandler(async(req, res) => {
     const user = await User.create({ username, email, password});
 
     // create verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = Buffer.from(
-      await crypto.subtle.digest(
-          "SHA-256",
-          Buffer.from(verificationToken)
-      )
-  ).toString("hex");
-    user.verificationToken = hashedToken;
+  //   const verificationToken = crypto.randomBytes(32).toString('hex');
+  //   const hashedToken = Buffer.from(
+  //     await crypto.subtle.digest(
+  //         "SHA-256",
+  //         Buffer.from(verificationToken)
+  //     )
+  // ).toString("hex"); 
+
+  // Wrong verifing method here we are inplementing the correct onw
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash("sha256").update(verificationToken).digest("hex");
+  user.verificationToken = hashedToken;
+
     user.verificationTokenExpiry = Date.now() + 1000 * 60 * 60 * 24;
     await user.save({ validateBeforeSave: false });
   // send verification email

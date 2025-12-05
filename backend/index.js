@@ -40,7 +40,7 @@ app.get("/", (req, res) => {
 })
 
 // connectdb
-connectdb();
+// connectdb();
 
 // routes 
 app.use('/api/auth', authRoutes);

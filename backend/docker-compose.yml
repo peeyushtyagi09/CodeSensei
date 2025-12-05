@@ -1,0 +1,59 @@
+services:
+
+  redis:
+    image: redis:latest
+    container_name: codesensei-redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  mongo:
+    image: mongo
+    restart: always
+    ports: 
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  api:
+    container_name: codesensei-api
+    build: .
+    command: node index.js
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - mongo
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      - "7000:7000"
+
+  run-worker:
+    container_name: codesensei-run-worker
+    build: .
+    command: npm run worker:run
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - mongo
+    volumes:
+      - .:/app
+    working_dir: /app
+
+  submit-worker:
+    container_name: codesensei-submit-worker
+    build: .
+    command: npm run worker:submit
+    env_file:
+      - ./.env
+    depends_on:
+      - redis
+      - mongo
+    volumes:
+      - .:/app
+    working_dir: /app
+volumes:
+  mongo_data:

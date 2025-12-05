@@ -4,7 +4,7 @@ const path = require('path');
 const os = require('os');
 const { v4: uuidv4 } = require('uuid');
 
-const DEFAULT_MEMORY_MB = paretInt(process.env.DEFAULT_MEMORY_LIMIT_MB);
+const DEFAULT_MEMORY_MB = parseInt(process.env.DEFAULT_MEMORY_LIMIT_MB);
 const DEFAULT_CPUS = parseFloat(process.env.DEFAULT_CPU_SHARES);
 
 async function createTempDir() {

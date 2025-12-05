@@ -151,7 +151,7 @@ exports.runCode = asyncHandler(async (req, res) => {
 
   // optional: size checks similar to previous codeRunner checkSizeLimits
   const job = await runQueue.add('run', { language, code, stdin, version, filename, userId: req.user?.id || null }, { attempts: 1 });
-  return res.json({ success: true, jobId: job.id });
+  return res.json({ success: true, jobId: Submission._id });
 });
 
 // /api/code/submit -> enqueue full testcase run
@@ -160,5 +160,5 @@ exports.submitCode = asyncHandler(async (req, res) => {
   if(!questionId || !language || !code) return res.status(400).json({ error: 'questionId, language and code required' });
 
   const job = await submitQueue.add('submit', { questionId, language, code, version, runHidden: runHiddenTestcases, userId: req.user?.id || null }, { attempts: 1 });
-  return res.json({ success: true, submissionJobId: job.id });
+  return res.json({ success: true, submissionJobId: Submission._id });
 });
