@@ -5,7 +5,7 @@ const { runInDocker } = require("../utils/dockerRunner");
 const Submission = require('../models/Submission');
 const logger = console;
 
-// Fix Redis options required for Redis Stack
+// Optional: fix Redis options for Redis Stack
 const workerConnection = {
   ...connection.options,
   maxRetriesPerRequest: null,
@@ -15,21 +15,24 @@ const workerConnection = {
 const runWorker = new Worker(
   'runQueue',
   async job => {
-    const { language, code, stdin = '', version = '*', userId, filename } = job.data;
-
-    // FIXED: Constructor name
-    const submission = new Submission({
-      userId: userId || null,
-      questionId: job.data.questionId || null,
+    const {
+      submissionId, // 👈 must be passed from controller
       language,
-      version,
       code,
-      status: 'running',
-      createdAt: new Date()
-    });
+      stdin = '',
+      version = '*',
+      userId,
+      filename
+    } = job.data;
 
+    // Step 1: fetch the existing submission
+    const submission = await Submission.findById(submissionId);
+    if (!submission) throw new Error('Submission not found for this job');
+
+    submission.status = 'running';
     await submission.save();
 
+    // Step 2: prepare file payload
     const files = [
       {
         name:
@@ -47,15 +50,12 @@ const runWorker = new Worker(
         language,
         files,
         stdin,
-        timeoutMs:
-          job.data.timeoutMs ||
-          parseInt(process.env.RUN_TIMEOUT_MS || "5000")
+        timeoutMs: job.data.timeoutMs || parseInt(process.env.RUN_TIMEOUT_MS || "5000")
       });
       const timeMs = Date.now() - start;
 
+      // Step 3: update same submission
       submission.status = "completed";
-
-      // FIXED: results array
       submission.results = [
         {
           input: stdin,
@@ -65,23 +65,21 @@ const runWorker = new Worker(
           exitCode: resp.exitCode,
           timeMs,
           memoryKb: 0,
-          passed: resp.stderr === "" && resp.exitCode === 0
+          passed: resp.exitCode === 0 && resp.stderr.trim() === "" && resp.stdout.trim() !== ""
         }
       ];
 
       submission.allPassed = submission.results.every(r => r.passed);
-
-      // FIXED: scorePercent
       submission.scorePercent = submission.allPassed ? 100 : 0;
-
       submission.completedAt = new Date();
+
       await submission.save();
 
-      logger.log("Run job completed:", submission._id);
-
+      logger.log("✅ Run job completed:", submission._id);
       return submission.toObject();
+
     } catch (err) {
-      logger.error("runWorker error", err);
+      logger.error("❌ runWorker error:", err.message);
 
       submission.status = "failed";
       submission.completedAt = new Date();
@@ -93,4 +91,4 @@ const runWorker = new Worker(
   { connection: workerConnection }
 );
 
-console.log("Run Worker is running and waiting for jobs...");
+console.log("🚀 Run Worker is running and waiting for jobs...");

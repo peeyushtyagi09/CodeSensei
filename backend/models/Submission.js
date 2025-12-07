@@ -18,7 +18,7 @@ const testResultSchema = new mongoose.Schema({
         default: "",
     },
     exitCode: {
-        type: String, 
+        type: Number, 
         default: null
     },
     timeMs: {
@@ -48,9 +48,11 @@ const SubmissionSchema = new mongoose.Schema({
     questionId: {
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Question',
-        required: true,
+        required: function() {
+            return this.type === 'submit';
+        }
     },
-    langauge: {
+    language: {
         type:String,
         required: true
     },
@@ -64,7 +66,7 @@ const SubmissionSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'running', 'completed', 'failed'],
+        enum: ['pending', 'running', 'completed', 'failed', 'queued'],
         default: 'pending'
     },
     results: {type: [testResultSchema], default: []},
@@ -75,6 +77,15 @@ const SubmissionSchema = new mongoose.Schema({
     allPassed: {
         type:Boolean, 
         default: false
+    },
+    jobUUID: {
+        type: String,
+        default: null
+    },
+    type: {
+        type: String, 
+        enum: ['run', 'submit'],
+        default: 'run'
     },
     createdAt: {
         type: Date,
