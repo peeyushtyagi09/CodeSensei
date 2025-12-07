@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 
-const ConceptQuestionSchema = new mongoose.Schema({
+const ConceptQuestionSchema = new Schema({
     id: {type: Number, required: true},
     question: { type: String, required: true},
     userAnswer: { type: String, default: '' },
@@ -9,7 +10,7 @@ const ConceptQuestionSchema = new mongoose.Schema({
     feedback: {type: String, default: ''}
 }, { _id: false });
 
-const ResponseSchema = new mongoose.Schema({
+const ResponseSchema = new Schema({
     questionId: {type: mongoose.Types.ObjectId, ref: 'Question', required: true},
     userCode: {type: String, default: ''},
     language: {type: String, dedfault: '' },
@@ -18,7 +19,7 @@ const ResponseSchema = new mongoose.Schema({
     failedTestCases: {type: Number, default: 0},
     exectionOutput: {type: String, default: ''},
     timeTakenMs: {type: Number, default: 0},
-    ConceptQuestionSchema: { type: [ConceptQuestionSchema], default: [] },
+    ConceptQuestion: { type: [ConceptQuestionSchema], default: [] },
     conceptualCompleted: {type: Boolean, default: false},
     conceptualScoreTotal:{type:Number, default: 0},
     createdAt: {type: Date, default: Date.now},
@@ -32,4 +33,6 @@ const InterviewSessionSchema = new Schema({
     startTime: {type: Date, dedfault: Date.now},
     endTime: { type: Date },
     status: { type: String, enum: ['ongoing', 'completed', 'aborted'], default: 'ongoing'}
-})
+}, { timestamps: true });
+
+module.exports = mogoose.model("InterviewSession", InterviewSessionSchema);
